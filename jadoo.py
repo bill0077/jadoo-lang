@@ -16,7 +16,7 @@ class token_type(Enum):
     BREAKLINE = auto()
 
     # data type
-    INT = auto()
+    INTEGER = auto()
     STRING = auto()
 
     # keyword
@@ -75,47 +75,46 @@ def line_tokenizer(line : str) -> list:
         if line[i] not in [mark_literal_ for mark_literal_ in mark_literal]:
             tmp += line[i]
             i += 1
-        else:
-            if tmp == "": # type of line[i] is "mark"
-                if line[i] == mark_literal[token_type.DOUBLE_QUOTES.value]:
-                    tmptkn = token(type=token_type.DOUBLE_QUOTES, literal='"')
-                    tokenized.append(tmptkn) # append opening DOUBLE_QUOTES to tokenized list
+            if i < len(line):
+                continue
+
+        if tmp == "": # type of line[i] is "mark"
+            if line[i] == mark_literal[token_type.DOUBLE_QUOTES.value]:
+                tmptkn = token(type=token_type.DOUBLE_QUOTES, literal='"')
+                tokenized.append(tmptkn) # append opening DOUBLE_QUOTES to tokenized list
+                i += 1
+                while line[i] != mark_literal[token_type.DOUBLE_QUOTES.value]:
+                    tmp += line[i]
                     i += 1
-                    while line[i] != mark_literal[token_type.DOUBLE_QUOTES.value]:
-                        tmp += line[i]
-                        i += 1
-                    tmptkn = token(type=token_type.STRING, literal=tmp, value=str(tmp))
-                    tokenized.append(tmptkn) # append STRING to tokenized list
-                    tmptkn = token(type=token_type.DOUBLE_QUOTES, literal='"')
-                    tokenized.append(tmptkn) # append closing DOUBLE_QUOTES to tokenized list
-                    tmp = ""
-                    i += 1
-                else:
-                    for token_type_ in token_type:
-                        if line[i] == mark_literal[token_type_.value]:
-                            tmptkn = token(type=token_type_, literal=mark_literal[token_type_.value])
-                            tokenized.append(tmptkn) # append token to tokenized list
-                            break
-                    i += 1
-            else:
-                type_flag : any = None
-                if type_flag is None:
-                    for token_type_ in token_type:
-                        if tmp == keyword_literal[token_type_.value]:
-                            tmptkn = token(type=token_type_, literal=tmp)
-                            tokenized.append(tmptkn) # append token to tokenized list
-                            type_flag = token_type_
-                            break
-                if type_flag is None:
-                    if tmp.isdigit():
-                        tmptkn = token(type=token_type.INT, literal=tmp, value=int(tmp))
-                        tokenized.append(tmptkn) # append INT(non-negative integer) to tokenized list
-                        type_flag = token_type.INT.value
-                if type_flag is None:
-                    tmptkn = token(type=token_type.NONE, literal=tmp)
-                    tokenized.append(tmptkn) # append NONE to tokenized list
-                    type_flag = token_type.NONE.value
+                tmptkn = token(type=token_type.STRING, literal=tmp, value=str(tmp))
+                tokenized.append(tmptkn) # append STRING to tokenized list
+                tmptkn = token(type=token_type.DOUBLE_QUOTES, literal='"')
+                tokenized.append(tmptkn) # append closing DOUBLE_QUOTES to tokenized list
                 tmp = ""
+                i += 1
+                continue
+            else:
+                for token_type_ in token_type:
+                    if line[i] == mark_literal[token_type_.value]:
+                        tmptkn = token(type=token_type_, literal=mark_literal[token_type_.value])
+                        tokenized.append(tmptkn) # append token to tokenized list
+                        break
+                i += 1
+                continue
+
+        for token_type_ in token_type:
+            if tmp == keyword_literal[token_type_.value]:
+                tmptkn = token(type=token_type_, literal=tmp)
+                tokenized.append(tmptkn) # append token to tokenized list
+                break
+        else: # token is not keyword
+            if tmp.isdigit():
+                tmptkn = token(type=token_type.INTEGER, literal=tmp, value=int(tmp))
+                tokenized.append(tmptkn) # append INT(non-negative integer) to tokenized list
+            else:    
+                tmptkn = token(type=token_type.NONE, literal=tmp)
+                tokenized.append(tmptkn) # append NONE to tokenized list
+        tmp = ""
     return tokenized
 
 with open("code.jadoo", "rt") as f:
@@ -124,8 +123,8 @@ with open("code.jadoo", "rt") as f:
     while line:
         line_tokenized = line_tokenizer(line)
         for tkn in line_tokenized:
-            # print(f"[<{tkn.literal}>, {tkn.type}]", end=", ")
-            print(f"<{tkn.literal}>", end=", ")
+            print(f"[<{tkn.literal}>, {tkn.type.name}]", end=", ")
+            # print(f"<{tkn.literal}>", end=", ")
             code_tokenized.append(tkn)
         line = f.readline()
 
