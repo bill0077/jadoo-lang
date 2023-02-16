@@ -1,8 +1,10 @@
+"""module for jadoo lang"""
 from dataclasses import dataclass
 from enum import Enum, auto
-import re
 
-class token_type(Enum):
+class TokenType(Enum):
+    """token type of jadoo lang"""
+
     # mark
     PAREN_OPEN = auto()
     PAREN_CLOSE = auto()
@@ -32,98 +34,100 @@ class token_type(Enum):
     TEMP = auto()
     VARNAME = auto()
 
-mark_literal : list[str] = ["" for i in range(len(token_type)+1)]
-mark_literal[token_type.PAREN_OPEN.value] = "("
-mark_literal[token_type.PAREN_CLOSE.value] = ")"
-mark_literal[token_type.EQUAL.value] = "="
-mark_literal[token_type.PLUS.value] = "+"
-mark_literal[token_type.MINUS.value] = "-"
-mark_literal[token_type.MULTIPLE.value] = "*"
-mark_literal[token_type.DIVISION.value] = "/"
-mark_literal[token_type.SINGLE_QUOTES.value] = "'"
-mark_literal[token_type.DOUBLE_QUOTES.value] = '"'
-mark_literal[token_type.BLANK.value] = " "
-mark_literal[token_type.BREAKLINE.value] = "\n"
+mark_literal : list[str] = ["" for i in range(len(TokenType)+1)]
+mark_literal[TokenType.PAREN_OPEN.value] = "("
+mark_literal[TokenType.PAREN_CLOSE.value] = ")"
+mark_literal[TokenType.EQUAL.value] = "="
+mark_literal[TokenType.PLUS.value] = "+"
+mark_literal[TokenType.MINUS.value] = "-"
+mark_literal[TokenType.MULTIPLE.value] = "*"
+mark_literal[TokenType.DIVISION.value] = "/"
+mark_literal[TokenType.SINGLE_QUOTES.value] = "'"
+mark_literal[TokenType.DOUBLE_QUOTES.value] = '"'
+mark_literal[TokenType.BLANK.value] = " "
+mark_literal[TokenType.BREAKLINE.value] = "\n"
 
-keyword_literal : list[str] = ["" for i in range(len(token_type)+1)]
-keyword_literal[token_type.PRINT.value] = "print"
-keyword_literal[token_type.WHILE.value] = "while"
-keyword_literal[token_type.IF.value] = "if"
-keyword_literal[token_type.JADOO.value] = "JADOO"
-keyword_literal[token_type.DOO.value] = "DOO"
+keyword_literal : list[str] = ["" for i in range(len(TokenType)+1)]
+keyword_literal[TokenType.PRINT.value] = "print"
+keyword_literal[TokenType.WHILE.value] = "while"
+keyword_literal[TokenType.IF.value] = "if"
+keyword_literal[TokenType.JADOO.value] = "JADOO"
+keyword_literal[TokenType.DOO.value] = "DOO"
 
 @dataclass
-class token():
+class Token():
+    """token class of jadoo lang"""
+
     def __post_init__(self):
         if mark_literal[self.type.value] != "":
             self.literal = mark_literal[self.type.value]
         elif keyword_literal[self.type.value] != "":
             self.literal = keyword_literal[self.type.value]
 
-    type : token_type = None
+    type : TokenType = None
     literal : str = None
     value : any = None
 
-# tokenizer
-def line_tokenizer(line : str) -> list:
+# lexer
+def lexer(line : str) -> list:
+    """lexer of jadoo lang"""
+
     tokenized : list = []
     tmp : str = ""
     i = 0
     while i < len(line):
-        if line[i] not in [mark_literal_ for mark_literal_ in mark_literal]:
+        if line[i] not in list(mark_literal):
             tmp += line[i]
             i += 1
             if i < len(line):
                 continue
 
         if tmp == "": # type of line[i] is "mark"
-            if line[i] == mark_literal[token_type.DOUBLE_QUOTES.value]:
-                tmptkn = token(type=token_type.DOUBLE_QUOTES)
+            if line[i] == mark_literal[TokenType.DOUBLE_QUOTES.value]:
+                tmptkn = Token(type=TokenType.DOUBLE_QUOTES)
                 tokenized.append(tmptkn) # append opening DOUBLE_QUOTES to tokenized list
                 i += 1
-                while line[i] != mark_literal[token_type.DOUBLE_QUOTES.value]:
+                while line[i] != mark_literal[TokenType.DOUBLE_QUOTES.value]:
                     tmp += line[i]
                     i += 1
-                tmptkn = token(type=token_type.STRING, literal=tmp, value=str(tmp))
+                tmptkn = Token(type=TokenType.STRING, literal=tmp, value=str(tmp))
                 tokenized.append(tmptkn) # append STRING to tokenized list
-                tmptkn = token(type=token_type.DOUBLE_QUOTES)
+                tmptkn = Token(type=TokenType.DOUBLE_QUOTES)
                 tokenized.append(tmptkn) # append closing DOUBLE_QUOTES to tokenized list
                 tmp = ""
-                i += 1
-                continue
             else:
-                for token_type_ in token_type:
-                    if line[i] == mark_literal[token_type_.value]:
-                        tmptkn = token(type=token_type_)
+                for token_type in TokenType:
+                    if line[i] == mark_literal[token_type.value]:
+                        tmptkn = Token(type=token_type)
                         tokenized.append(tmptkn) # append token to tokenized list
                         break
-                i += 1
-                continue
+            i += 1
+            continue
 
-        for token_type_ in token_type:
-            if tmp == keyword_literal[token_type_.value]:
-                tmptkn = token(type=token_type_)
+        for token_type in TokenType:
+            if tmp == keyword_literal[token_type.value]:
+                tmptkn = Token(type=token_type)
                 tokenized.append(tmptkn) # append token to tokenized list
                 break
         else: # tmp is not keyword
             if tmp.isdigit():
-                tmptkn = token(type=token_type.INTEGER, literal=tmp, value=int(tmp))
+                tmptkn = Token(type=TokenType.INTEGER, literal=tmp, value=int(tmp))
                 tokenized.append(tmptkn) # append INT(non-negative integer) to tokenized list
-            else:    
-                tmptkn = token(type=token_type.NONE, literal=tmp)
+            else:
+                tmptkn = Token(type=TokenType.NONE, literal=tmp)
                 tokenized.append(tmptkn) # append NONE to tokenized list
         tmp = ""
     return tokenized
 
-with open("code.jadoo", "rt") as f:
-    code_tokenized : list[token] = []
-    line = f.readline()
-    while line:
-        line_tokenized = line_tokenizer(line)
+with open("code.jadoo", "rt", encoding="utf8") as f:
+    code_tokenized : list[Token] = []
+    line_raw = f.readline()
+    while line_raw:
+        line_tokenized = lexer(line_raw)
         for tkn in line_tokenized:
             print(f"[<{tkn.literal}>, {tkn.type.name}]", end=", ")
             # print(f"<{tkn.literal}>", end=", ")
             code_tokenized.append(tkn)
-        line = f.readline()
+        line_raw = f.readline()
 
 # lexer
