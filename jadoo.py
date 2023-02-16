@@ -1,9 +1,9 @@
-"""module for jadoo lang"""
+'''module for jadoo lang'''
 from dataclasses import dataclass
 from enum import Enum, auto
 
 class TokenType(Enum):
-    """token type of jadoo lang"""
+    '''token type of jadoo lang'''
 
     # mark
     PAREN_OPEN = auto()
@@ -56,7 +56,7 @@ keyword_literal[TokenType.DOO.value] = "DOO"
 
 @dataclass
 class Token():
-    """token class of jadoo lang"""
+    '''token class of jadoo lang'''
 
     def __post_init__(self):
         if mark_literal[self.type.value] != "":
@@ -70,7 +70,7 @@ class Token():
 
 # lexer
 def lexer(line : str) -> list:
-    """lexer of jadoo lang"""
+    '''lexer of jadoo lang'''
 
     tokenized : list = []
     tmp : str = ""
@@ -95,14 +95,16 @@ def lexer(line : str) -> list:
                 tmptkn = Token(type=TokenType.DOUBLE_QUOTES)
                 tokenized.append(tmptkn) # append closing DOUBLE_QUOTES to tokenized list
                 tmp = ""
+                i += 1
+                continue
             else:
                 for token_type in TokenType:
                     if line[i] == mark_literal[token_type.value]:
                         tmptkn = Token(type=token_type)
                         tokenized.append(tmptkn) # append token to tokenized list
                         break
-            i += 1
-            continue
+                i += 1
+                continue
 
         for token_type in TokenType:
             if tmp == keyword_literal[token_type.value]:
@@ -119,15 +121,44 @@ def lexer(line : str) -> list:
         tmp = ""
     return tokenized
 
-with open("code.jadoo", "rt", encoding="utf8") as f:
-    code_tokenized : list[Token] = []
-    line_raw = f.readline()
-    while line_raw:
-        line_tokenized = lexer(line_raw)
-        for tkn in line_tokenized:
-            print(f"[<{tkn.literal}>, {tkn.type.name}]", end=", ")
-            # print(f"<{tkn.literal}>", end=", ")
-            code_tokenized.append(tkn)
-        line_raw = f.readline()
+@dataclass
+class ParseNode:
+    '''node in parse tree of jadoo lang'''
+    
+    def __post_init__(self):
+        parent : ParseNode = None
+        left : ParseNode = None
+        right : ParseNode = None
 
-# lexer
+    type : TokenType = None
+    literal : str = None
+    value : any = None
+
+@dataclass
+class ParseTree:
+    '''parse tree of jadoo lang'''
+
+    root: ParseNode
+
+    def parse(self, node: ParseNode) -> None:
+        '''visit node in parse tree'''
+        if node:
+            self.parse(node.left)
+            print(node.data, end="->")
+            self.parse(node.right)
+
+# parser
+def parser(line : list[Token]) -> list:
+    '''parser of jadoo lang'''
+
+if __name__ == "__main__":
+    with open("code.jadoo", "rt", encoding="utf8") as f:
+        code_tokenized : list[Token] = []
+        line_raw = f.readline()
+        while line_raw:
+            line_tokenized = lexer(line_raw)
+            for tkn in line_tokenized:
+                print(f"[<{tkn.literal}>, {tkn.type.name}]", end=", ")
+                # print(f"<{tkn.literal}>", end=", ")
+                code_tokenized.append(tkn)
+            line_raw = f.readline()
