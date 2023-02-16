@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-import re
 
 class token_type(Enum):
     # mark
@@ -49,16 +48,6 @@ keyword_literal[token_type.WHILE.value] = "while"
 keyword_literal[token_type.IF.value] = "if"
 keyword_literal[token_type.JADOO.value] = "JADOO"
 keyword_literal[token_type.DOO.value] = "DOO"
-
-'''iter = 0
-for i in mark_literal:
-    print(f"i={iter}, <{i}>")
-    iter += 1
-print()
-iter = 0
-for i in keyword_literal:
-    print(f"i={iter}, <{i}>")
-    iter += 1'''
 
 @dataclass
 class token():
@@ -127,8 +116,5 @@ with open("code.jadoo", "rt") as f:
             # print(f"<{tkn.literal}>", end=", ")
             code_tokenized.append(tkn)
         line = f.readline()
-
-'''for a in code_tokenized:
-    print(f"[{a.type}]", end=", ")'''
 
 # lexer
