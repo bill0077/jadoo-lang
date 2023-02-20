@@ -19,6 +19,7 @@ class TokenType(Enum):
     # data type
     INTEGER = auto()
     STRING = auto()
+    EXPRESSION = auto()
 
     # keyword
     PRINT = auto()
@@ -134,7 +135,12 @@ class ParseNode:
     '''node in parse tree of jadoo lang'''
     def __post_init__(self):
         self.parent : ParseNode = None
-        self.child : list[ParseNode] = None
+        self.child : list[ParseNode] = []
+
+        if mark_literal[self.type.value] != "":
+            self.literal = mark_literal[self.type.value]
+        elif keyword_literal[self.type.value] != "":
+            self.literal = keyword_literal[self.type.value]
 
     type : TokenType = TokenType.NONE
     literal : str = None
@@ -145,51 +151,60 @@ class ParseTree:
     '''parse tree of jadoo lang'''
     def __post_init__(self):
         self.node_root : ParseNode = ParseNode(type=TokenType.ROOT)
-        self.node_curr : ParseNode = None
-        self.tknlist : list[Token] = []
-        self.tkn_curr : int = None
+        self.node_curr : ParseNode = self.node_root
+        self.tkn_list : list[Token] = []
+        self.tkn_curr : int = 0
 
-    def print(self, node: ParseNode) -> None:
+    def print(self, node : ParseNode, indent : int = 0) -> None:
         '''print node in parse tree'''
         if node:
+            for i in range(indent):
+                print("    ", end="")
+            print(f"[<{node.literal}>, {node.type.name}]")
             for child_ in node.child:
-                self.parse(child_)
-                print(child_.type.name, end="->")
+                self.print(child_, indent + 1)
 
-# currently working
-###########################################################
-    def parse(self, node: ParseNode) -> None:
-        '''visit node in parse tree'''
-        if self.tkn_curr == 0:
-            pass
+    # currently working
+    ###########################################################
+    def parse(self, node: ParseNode) -> any:
+        '''parser for jadoo lang'''
+        for tkn in self.tkn_list:
+            if tkn.type == TokenType.PRINT:
+                tmpnode = ParseNode(type=TokenType.PRINT)
+                tmpnode.parent = node
+                node.child.append(tmpnode)
+                self.tkn_curr += 1
+                self.parse(tmpnode)
+            elif tkn.type == TokenType.PAREN_OPEN:
+                tmpnode = ParseNode(type=TokenType.PAREN_OPEN)
+                tmpnode.parent = node
+                node.child.append(tmpnode)
+                self.tkn_curr += 1
+                self.parse(node)
+            elif tkn.type == TokenType.PAREN_CLOSE:
+                tmpnode = ParseNode(type=TokenType.PAREN_CLOSE)
+                tmpnode.parent = node
+                node.child.append(tmpnode)
+                self.tkn_curr += 1
+                self.parse(node)
+            elif tkn.type == TokenType.STRING:
+                tmpnode = ParseNode(type=TokenType.STRING)
+                tmpnode.parent = node
+                node.child.append(tmpnode)
+                self.tkn_curr += 1
+                self.parse(node)
+            elif tkn.type == TokenType.INTEGER:
+                tmpnode = ParseNode(type=TokenType.INTEGER)
+                tmpnode.parent = node
+                node.child.append(tmpnode)
+                self.tkn_curr += 1
+                self.parse(node)
 
-        if node:
-            self.node_curr = node
-
-            if self.node_curr.type == TokenType.ROOT:
-                tmpnode = ParseNode()
-                tmpnode.parent = self.node_root
-                self.node_root.child.append(tmpnode)
-                self.node_curr = tmpnode
-            elif self.node_curr.type == TokenType.PRINT:
-                tmpnode = ParseNode()
-                tmpnode.parent = self.node_root
-                self.node_root.child.append(tmpnode)
-                self.node_curr = tmpnode
-
-            for child_ in node.child:
-                print(child_.type.name, end="->")
-                self.parse(child_)
-
-        self.tkn_curr += 1
-###########################################################
-
-# not started
-###########################################################
-    def build_dict(self, node: ParseNode) -> dict[Token]:
-        '''build dict for parse tree'''
-        return {node}
-###########################################################
+def parser(trimmed : list[TokenType]) -> dict:
+    '''parser for jadoo lang'''
+    parsetree = ParseTree()
+    parsetree.tkn_list = trimmed
+    parsetree.print(parsetree.node_root)
 
 if __name__ == "__main__":
     with open("code.jadoo", "rt", encoding="utf8") as f:
@@ -199,11 +214,12 @@ if __name__ == "__main__":
             for i in range(100):
                 print("=", end="")
             print(f"\n\nline : <{line_raw.strip()}>", end="")
+
             print("\n\nlexer : ", end="")
             line_tokenized = lexer(line_raw)
             for token in line_tokenized:
                 print(f"[<{token.literal}>, {token.type.name}]", end=", ")
-            
+
             print("\n\ntrimmer : ", end="")
             line_trimmed = trimmer(line_tokenized)
             for token in line_trimmed:
@@ -213,13 +229,33 @@ if __name__ == "__main__":
             print("\n\n", end="")
             line_raw = f.readline()
 
-    # not started
-    ###########################################################
             print("parser : ")
-            parse_tree = ParseTree()
-            parse_tree.tknlist = code_tokenized
-            parse_tree.parse(parse_tree.node_root)
-            parse_tree.print(parse_tree.node_root)
+            parser(code_tokenized)
+
+            print("testing parsetree print func : ")
+            testtree = ParseTree()
+            tmpnode1 = ParseNode(type=TokenType.PRINT)
+            tmpnode1.parent = testtree.node_root
+            testtree.node_root.child.append(tmpnode1)
+            tmpnode2 = ParseNode(type=TokenType.PAREN_OPEN)
+            tmpnode2.parent = tmpnode1
+            tmpnode1.child.append(tmpnode2)
+            tmpnode3 = ParseNode(type=TokenType.EXPRESSION)
+            tmpnode3.parent = tmpnode1
+            tmpnode1.child.append(tmpnode3)
+            tmpnode4 = ParseNode(type=TokenType.INTEGER)
+            tmpnode4.parent = tmpnode3
+            tmpnode3.child.append(tmpnode4)
+            tmpnode5 = ParseNode(type=TokenType.PLUS)
+            tmpnode5.parent = tmpnode3
+            tmpnode3.child.append(tmpnode5)
+            tmpnode6 = ParseNode(type=TokenType.INTEGER)
+            tmpnode6.parent = tmpnode3
+            tmpnode3.child.append(tmpnode6)
+            tmpnode7 = ParseNode(type=TokenType.PAREN_CLOSE)
+            tmpnode7.parent = tmpnode1
+            tmpnode1.child.append(tmpnode7)
+            testtree.print(testtree.node_root)
             # code_parsed = parse_tree.build_dict(parse_tree.node_root)
             # print(code_parsed)
-    ###########################################################
+            # (/・・)ノ. (ﾉ・ｪ・)ﾉ.
